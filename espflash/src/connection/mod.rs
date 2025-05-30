@@ -603,7 +603,7 @@ impl Connection {
         Ok(())
     }
 
-    /// Turn a serial port into a [Port]
+    /// Convert this connection into its underlying serial port
     pub fn into_serial(self) -> Port {
         self.serial
     }

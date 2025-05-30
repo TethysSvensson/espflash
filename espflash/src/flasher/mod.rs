@@ -1181,14 +1181,6 @@ impl Flasher {
         Ok(())
     }
 
-    pub fn into_serial(self) -> Port {
-        self.connection.into_serial()
-    }
-
-    pub fn usb_pid(&self) -> u16 {
-        self.connection.usb_pid()
-    }
-
     pub fn erase_region(&mut self, offset: u32, size: u32) -> Result<(), Error> {
         debug!("Erasing region of 0x{:x}B at 0x{:08x}", size, offset);
 
@@ -1365,6 +1357,11 @@ impl Flasher {
         }
 
         Ok(())
+    }
+
+    /// Take the serial port out of the flasher, consuming self
+    pub fn into_serial(self) -> Port {
+        self.connection.into_serial()
     }
 }
 
