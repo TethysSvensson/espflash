@@ -35,7 +35,12 @@ pub fn get_serial_port_info(
 
     let ports = detect_usb_serial_ports(matches.list_all_ports).unwrap_or_default();
 
-    if let Some(serial) = &matches.port {
+    if let Some(port_path) = &matches.port_path {
+        Ok(SerialPortInfo {
+            port_name: port_path.clone(),
+            port_type: SerialPortType::Unknown,
+        })
+    } else if let Some(serial) = &matches.port {
         find_serial_port(&ports, serial)
     } else if let Some(serial) = &config.connection.serial {
         find_serial_port(&ports, serial)

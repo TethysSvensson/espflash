@@ -76,6 +76,9 @@ pub struct ConnectArgs {
     /// Serial port connected to target device
     #[arg(short = 'p', long, env = "ESPFLASH_PORT")]
     pub port: Option<String>,
+    /// Force use of a specific path for the tty
+    #[arg(long)]
+    pub port_path: Option<String>,
 }
 
 /// Generate completions for the given shell
@@ -306,6 +309,7 @@ pub fn connect(
 
     let serial_port = serialport::new(&port_info.port_name, 115_200)
         .flow_control(FlowControl::None)
+        .preserve_dtr_on_open()
         .open_native()
         .map_err(Error::from)
         .wrap_err_with(|| format!("Failed to open serial port {}", port_info.port_name))?;
