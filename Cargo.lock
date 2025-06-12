@@ -1202,6 +1202,7 @@ version = "3.2.0"
 dependencies = [
  "addr2line 0.22.0",
  "base64",
+ "bitflags 2.9.1",
  "bytemuck",
  "clap",
  "clap_complete",

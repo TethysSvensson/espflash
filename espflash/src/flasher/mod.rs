@@ -18,26 +18,25 @@ use md5::{Digest, Md5};
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "serialport")]
 use serialport::UsbPortInfo;
-use strum::IntoEnumIterator;
-use strum::{Display, EnumIter, VariantNames};
+use strum::{Display, EnumIter, IntoEnumIterator, VariantNames};
 
 use crate::{
-    error::Error,
+    connection::{
+        reset::{ResetAfterOperation, ResetBeforeOperation},
+        Connection, Port,
+    },
+    error::{ConnectionError, Error},
+    flasher::stubs::{
+        FlashStub, CHIP_DETECT_MAGIC_REG_ADDR, DEFAULT_TIMEOUT, EXPECTED_STUB_HANDSHAKE,
+    },
     targets::{Chip, XtalFrequency},
 };
 
 #[cfg(feature = "serialport")]
 use crate::{
     command::{Command, CommandType},
-    connection::{
-        reset::{ResetAfterOperation, ResetBeforeOperation},
-        Connection, Port,
-    },
     elf::{ElfFirmwareImage, FirmwareImage, RomSegment},
-    error::{ConnectionError, ResultExt},
-    flasher::stubs::{
-        FlashStub, CHIP_DETECT_MAGIC_REG_ADDR, DEFAULT_TIMEOUT, EXPECTED_STUB_HANDSHAKE,
-    },
+    error::ResultExt,
 };
 
 #[cfg(feature = "serialport")]

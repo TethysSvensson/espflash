@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add `watchdog-reset` strategy to `--after` subcommand (#779)
+
 ### Changed
 
 ### Fixed

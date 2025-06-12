@@ -29,6 +29,7 @@ use crate::{
     command::{Command, CommandType},
     connection::reset::soft_reset,
     error::{ConnectionError, Error, ResultExt, RomError, RomErrorKind},
+    targets::Chip,
 };
 
 pub mod reset;
@@ -256,7 +257,7 @@ impl Connection {
     }
 
     // Reset the device taking into account the reset after argument
-    pub fn reset_after(&mut self, is_stub: bool) -> Result<(), Error> {
+    pub fn reset_after(&mut self, is_stub: bool, chip: Chip) -> Result<(), Error> {
         let pid = self.get_usb_pid()?;
 
         match self.after_operation {
@@ -271,12 +272,62 @@ impl Connection {
                 info!("Staying in flasher stub");
                 Ok(())
             }
+            ResetAfterOperation::WatchdogReset => {
+                info!("Resetting device with watchdog");
+
+                match chip {
+                    Chip::Esp32c3 => {
+                        if self.is_using_usb_serial_jtag() {
+                            chip.into_rtc_wdt_reset()?.rtc_wdt_reset(self)?;
+                        }
+                    }
+                    Chip::Esp32p4 => {
+                        // Check if the connection is USB OTG
+                        if chip.into_usb_otg()?.is_using_usb_otg(self)? {
+                            chip.into_rtc_wdt_reset()?.rtc_wdt_reset(self)?;
+                        }
+                    }
+                    Chip::Esp32s2 => {
+                        // Check if the connection is USB OTG
+                        if chip.into_usb_otg()?.is_using_usb_otg(self)? {
+                            let target = chip.into_rtc_wdt_reset()?;
+
+                            // Check the strapping register to see if we can perform RTC WDT
+                            // reset
+                            if target.can_rtc_wdt_reset(self)? {
+                                target.rtc_wdt_reset(self)?;
+                            }
+                        }
+                    }
+                    Chip::Esp32s3 => {
+                        if self.is_using_usb_serial_jtag()
+                            || chip.into_usb_otg()?.is_using_usb_otg(self)?
+                        {
+                            let target = chip.into_rtc_wdt_reset()?;
+
+                            // Check the strapping register to see if we can perform RTC WDT
+                            // reset
+                            if target.can_rtc_wdt_reset(self)? {
+                                target.rtc_wdt_reset(self)?;
+                            }
+                        }
+                    }
+                    _ => {
+                        return Err(Error::UnsupportedFeature {
+                            chip,
+                            feature: "watchdog reset".into(),
+                        })
+                    }
+                }
+
+                Ok(())
+            }
         }
     }
 
     // Reset the device to flash mode
     pub fn reset_to_flash(&mut self, extra_delay: bool) -> Result<(), Error> {
-        if self.port_info.pid == USB_SERIAL_JTAG_PID {
+        if self.is_using_usb_serial_jtag() {
             UsbJtagSerialReset.reset(&mut self.serial)
         } else {
             #[cfg(unix)]
@@ -486,6 +537,11 @@ impl Connection {
     /// Get the USB PID of the serial port
     pub fn get_usb_pid(&self) -> Result<u16, Error> {
         Ok(self.port_info.pid)
+    }
+
+    pub(crate) fn is_using_usb_serial_jtag(&self) -> bool {
+        // self.port_info.pid == USB_SERIAL_JTAG_PID
+        true
     }
 }
 
